@@ -98,15 +98,16 @@ public class GeocoderPlugin implements MethodCallHandler {
   private void findAddressesFromCoordinates(final float latitude, final float longitude, final Result result) {
 
     final GeocoderPlugin plugin = this;
-    new AsyncTask<Void, Void, Void>()
+    new AsyncTask<Void, Void, List<Address>>()
     {
       @Override
-      protected Void doInBackground(Void... params)
+      protected List<Address> doInBackground(Void... params)
       {
         try {
           plugin.assertPresent();
-          List<Address> addresses = geocoder.getFromLocation(latitude, longitude, 20);
-          result.success(createAddressMapList(addresses));
+//          List<Address> addresses = geocoder.getFromLocation(latitude, longitude, 20);
+//          result.success(createAddressMapList(addresses));
+          return geocoder.getFromLocation(latitude, longitude, 20);
         } catch (IOException ex) {
           result.error("failed", ex.toString(), null);
         } catch (NotAvailableException ex) {
@@ -116,9 +117,15 @@ public class GeocoderPlugin implements MethodCallHandler {
       }
 
       @Override
-      protected void onPostExecute(Void result)
+      protected void onPostExecute(List<Address> addresses)
       {
-        super.onPostExecute(result);
+        if (addresses != null) {
+          if (addresses.isEmpty())
+            result.error("not_available", "Empty", null);
+
+          else result.success(createAddressMapList(addresses));
+        }
+        else result.error("failed", "Failed", null);
       }
     }.execute();
   }
